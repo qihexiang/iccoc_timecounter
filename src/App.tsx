@@ -12,54 +12,60 @@ function useNow() {
 }
 
 function Clock(props: {
-  initTime: number | null;
-  limit: number;
+  endTime: Date | null;
   warning: number;
   danger: number;
   fontZoom: number;
 }) {
   const now = useNow();
-  const duration =
-    props.initTime !== null ? now.getTime() - props.initTime : null;
-  const remain =
-    duration !== null
-      ? props.limit - duration > 0
-        ? props.limit - duration
-        : 0
-      : null;
+  const wallClock = (
+    <div
+      style={{
+        fontSize: 32,
+        padding: 4,
+        borderRadius: 8,
+        backgroundColor: "white",
+      }}
+    >
+      {format(now, "HH:mm")}
+    </div>
+  );
+  if (props.endTime === null) {
+    return (
+      <div className="clock">
+        <div style={{ fontSize: 128 }}>计时停止/Clock stopped</div>
+        {wallClock}
+      </div>
+    );
+  }
+  const _secsRemain = Math.floor(
+    (props.endTime.getTime() - now.getTime()) / 1000
+  );
+  const secsRemainCalculated = _secsRemain >= 0 ? _secsRemain : 0
+  const [hours, afterHours] = [
+    Math.floor(secsRemainCalculated / 3600),
+    secsRemainCalculated % 3600,
+  ];
+  const [minutes, seconds] = [Math.floor(afterHours / 60), afterHours % 60];
 
   return (
     <div
       className="clock"
       style={{
         backgroundColor:
-          remain === null
-            ? "white"
-            : remain >= props.warning
+          secsRemainCalculated >= props.warning
             ? "lightblue"
-            : remain >= props.danger
+            : secsRemainCalculated >= props.danger
             ? "pink"
             : "red",
       }}
     >
-      {remain === null || remain === 0 ? (
-        <div style={{ fontSize: 128 }}>计时停止/Clock stoped</div>
-      ) : (
-        <div style={{ fontSize: 128 + 16 * props.fontZoom }}>
-          {format(remain, "mm:ss")}
-        </div>
-      )}
-
-      <div
-        style={{
-          fontSize: 32,
-          padding: 4,
-          borderRadius: 8,
-          backgroundColor: "white",
-        }}
-      >
-        {format(now, "HH:mm")}
+      <div style={{ fontSize: 128 + 16 * props.fontZoom }}>
+        {hours === 0 ? null : `${hours.toString().padStart(2, "0")}:`}
+        {minutes.toString().padStart(2, "0")}:
+        {seconds.toString().padStart(2, "0")}
       </div>
+      {wallClock}
     </div>
   );
 }
@@ -73,10 +79,9 @@ function App() {
   return (
     <div className="container">
       <Clock
-        limit={limit * 1000}
-        warning={warning * 1000}
-        danger={danger * 1000}
-        initTime={initTime}
+        endTime={initTime === null ? null : new Date(initTime + limit * 1000)}
+        warning={warning}
+        danger={danger}
         fontZoom={fontZoom}
       ></Clock>
       <div className="settings">
